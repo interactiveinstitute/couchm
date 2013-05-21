@@ -2,3 +2,5 @@
 *.pyc
 
 push.sh
+*~
+*.swp
