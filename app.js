@@ -296,7 +296,8 @@ ddoc.views.domains = {
 // If you just want to keep up to date with measurements, optionally for a specific feed or datastream, use the [changes feed](http://couchdb.readthedocs.org/en/latest/changes.html) with the `energy_data/measurements` filter and optionally `feed` and `datastream` parameters.
 ddoc.filters.measurements = function(doc, req) {
   if (doc.type != 'measurement') return false;
-  if (req.query.feed && req.query.feed != doc.source) return false;
+  if (req.query.source && req.query.source != doc.source)
+    return false;
   if (req.query.datastream && Object.keys(doc).indexOf(req.query.datastream) == -1) return false;
   return true;
 };
@@ -369,6 +370,6 @@ ddoc.validate_doc_update = function(newDoc, oldDoc, userCtx, secObj) {
   }
 };
 
-couchapp.loadAttachments(ddoc, path.join(__dirname, 'app'));
+couchapp.loadAttachments(ddoc, path.join(__dirname, 'demo'));
 
 module.exports = ddoc;
