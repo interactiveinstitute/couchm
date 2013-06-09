@@ -291,6 +291,37 @@ ddoc.views.domains = {
   reduce: '_stats'
 };
 
+// ### Extrema view
+//
+// Used to see a minimum and maximum per interval.
+ddoc.views.extrema = {
+  map: function(doc) {
+    if (doc.type == 'measurement') {
+      var ignore = ['_id', '_rev', 'source', 'type', 'user'];
+      for (var name in doc) {
+        if (ignore.indexOf(name) == -1) {
+          var key = [doc.source, name, doc.timestamp];
+          var value = doc[name];
+          if (value === true || value === false) {
+            emit(key, [doc.timestamp, +value]);
+          } else {
+            var parsed = parseFloat(value);
+            if (!isNaN(parsed)) {
+              emit(key, [doc.timestamp, parsed]);
+            }
+          }
+        }
+      }
+    }
+  },
+  reduce: function(keys, values, rereduce) {
+    if (rereduce)
+      values = [values.min, values.max];
+    values.sort(function(a, b) { return a[1] > b[1]; });
+    return { min: values[0], max: values[values.length - 1] };
+  }
+};
+
 // ### Measurement filter
 //
 // If you just want to keep up to date with measurements, optionally for a specific feed or datastream, use the [changes feed](http://couchdb.readthedocs.org/en/latest/changes.html) with the `energy_data/measurements` filter and optionally `feed` and `datastream` parameters.
