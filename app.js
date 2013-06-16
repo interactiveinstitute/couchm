@@ -259,7 +259,7 @@ ddoc.lists.interpolate_datastream = function(head, req) {
   }
   
   var end = map.couchm_to_unix_ts(last);
-  for (var until = lastKey; until < end; until += step) {
+  for (var until = lastKey + step; until < end; until += step) {
     sendValue(['finish', new Date(until), meta.at], new Date(until));
   }
   send('\n  ]');
