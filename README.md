@@ -74,10 +74,4 @@ The response format is similar to Cosm’s, except:
 
 ## How it works
 
-Read [CouchDB: The Definitive Guide](http://guide.couchdb.org/draft/) for a nice introduction to CouchDB views, shows and lists.
-
-The `by_source_and_time` map-reduce view indexes the data in a way that any historical query can be fetched very quickly. Generating this index from scratch can take a long time but then changes are processed rather quickly. To speed client requests up, have a cronjob query this view regularly.
-
-The `_show` function named `historical` redirects clients to the right `by_source_and_time` query, passed through the `_list` function `interpolate`.
-
-(To be continued.)
+See `about.pdf` for an introduction.
