@@ -186,7 +186,7 @@ ddoc.shows.historical = function(doc, req) {
 
   return {
     code: 302, // Found
-    headers: { 'Location': url }
+    headers: { 'Location': url, 'Content-Type': 'application/json' }
   };
 };
 
