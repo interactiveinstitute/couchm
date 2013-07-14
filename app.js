@@ -252,8 +252,8 @@ ddoc.lists.interpolate_datastream = function(head, req) {
         sendValue(['interpolate', new Date(between), meta.at],
           new Date(between));
       }
+      lastKey = key;
     }
-    lastKey = key;
     
     // Update the datastream with new values.
     if (row.value.length > stream_idx && row.value[stream_idx] !== null) {
