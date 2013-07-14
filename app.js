@@ -103,6 +103,9 @@ ddoc.views.by_source_and_time = {
     shared.unix_to_cosm_ts = function(timestamp) {
       return new Date(timestamp).toJSON().slice(0, 23) + '000Z';
     };
+
+// When using the historical API, extra data needs to be loaded from before the start time to ensure that the first datapoint actually contains a measurement. From this extra fetched data, only last datapoint in the interval `[start - extra_time_before, start]` will be used.
+    shared.extra_time_before = 24 * 60 * 60 * 1000;
     
     if (!doc) {
       return shared;
@@ -173,6 +176,9 @@ ddoc.shows.historical = function(doc, req) {
   var start = req.query.start ? +new Date(req.query.start) : +new Date - ms;
   var end = start + ms;
 
+  // Fetch extra points at the start.
+  start -= map.extra_time_before;
+
   // Use the map key function to determine the boundaries.
   params.startkey = JSON.stringify(map.unix_to_couchm_ts(start, req.query.feed, true));
   params.endkey = JSON.stringify(map.unix_to_couchm_ts(end, req.query.feed, true));
@@ -219,17 +225,18 @@ ddoc.lists.interpolate_datastream = function(head, req) {
     at: new Date(map.couchm_to_unix_ts(first))
   };
   
-  var lastKey = map.couchm_to_unix_ts(first) - step;
+  var realFirstKey = map.couchm_to_unix_ts(first) + map.extra_time_before;
+  var lastKey = realFirstKey - step;
   
-  var first = true;
+  var isFirst = true;
   var sendValue = function(dbg, key) {
     var obj = {
       at: key,
       value: meta.current_value || '0'
     };
     if (dbg) obj.debug = dbg;
-    send((first ? '' : ',\n') + '    ' + JSON.stringify(obj));
-    first = false;
+    send((isFirst ? '' : ',\n') + '    ' + JSON.stringify(obj));
+    isFirst = false;
   };
   
   var row;
@@ -237,9 +244,14 @@ ddoc.lists.interpolate_datastream = function(head, req) {
     var origkey = JSON.parse(JSON.stringify(row.key));
     var key = map.couchm_to_unix_ts(row.key);
 
+    log('keys ' + key + ' ??? ' + realFirstKey);
+
     // Interpolate all streams up until now.
-    for (var between = lastKey + step; between < key; between += step) {
-      sendValue(['interpolate', new Date(between), meta.at], new Date(between));
+    if (key >= realFirstKey) {
+      for (var between = lastKey + step; between < key; between += step) {
+        sendValue(['interpolate', new Date(between), meta.at],
+          new Date(between));
+      }
     }
     lastKey = key;
     
@@ -249,7 +261,8 @@ ddoc.lists.interpolate_datastream = function(head, req) {
       var value = row.value[stream_idx];
       if (value === true || value === false) meta.current_value = '' + +value;
       else meta.current_value = '' + row.value[stream_idx];
-      sendValue(['value', new Date(key), meta.at], new Date(key));
+      if (key >= realFirstKey)
+        sendValue(['value', new Date(key), meta.at], new Date(key));
 
       if (+meta.current_value > +meta.max_value)
         meta.max_value = meta.current_value;
