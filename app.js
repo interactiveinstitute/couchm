@@ -53,6 +53,7 @@ ddoc.views.by_source_and_time = {
     shared.fields = [
       'at',
       'ElectricPower',
+      'ElectricPowerUnoccupied',
       'OfficeOccupied',
       'OfficeTemperature',
       'ElectricEnergy',
