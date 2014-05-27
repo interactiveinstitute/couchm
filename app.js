@@ -209,7 +209,8 @@ ddoc.lists.interpolate_datastream = function(head, req) {
   var stream = req.query.datastream;
   var at_idx = map.field('at');
   var stream_idx = map.field(stream);
-  
+  var absence_idx = map.field("ElectricPowerUnoccupied"); // THIJS
+
   send('{\n  "id": ' + JSON.stringify(stream) + ',\n  "datapoints": [\n');
   
   var level = req.query.group_level;
@@ -222,7 +223,8 @@ ddoc.lists.interpolate_datastream = function(head, req) {
     min_value: Infinity,
     max_value: -Infinity,
     current_value: null,
-    at: new Date(map.couchm_to_unix_ts(first))
+    at: new Date(map.couchm_to_unix_ts(first)),
+    current_absence: null // THIJS
   };
   
   var realFirstKey = map.couchm_to_unix_ts(first) + map.extra_time_before;
@@ -232,7 +234,8 @@ ddoc.lists.interpolate_datastream = function(head, req) {
   var sendValue = function(dbg, key) {
     var obj = {
       at: key,
-      value: meta.current_value || '0'
+      value: meta.current_value || '0',
+      absence: meta.current_absence || 0  // THIJS
     };
     if (dbg) obj.debug = dbg;
     send((isFirst ? '' : ',\n') + '    ' + JSON.stringify(obj));
@@ -259,8 +262,13 @@ ddoc.lists.interpolate_datastream = function(head, req) {
     if (row.value.length > stream_idx && row.value[stream_idx] !== null) {
       meta.at = row.value[at_idx];
       var value = row.value[stream_idx];
+      var absence = row.value[absence_idx]; // THIJS
+      // wat?
       if (value === true || value === false) meta.current_value = '' + +value;
       else meta.current_value = '' + row.value[stream_idx];
+      // THIJS
+      if (absence === true || absence === false) meta.current_absence = '' + +absence;
+      else meta.current_absence = '' + row.value[absence_idx];
       if (key >= realFirstKey)
         sendValue(['value', new Date(key), meta.at], new Date(key));
 
